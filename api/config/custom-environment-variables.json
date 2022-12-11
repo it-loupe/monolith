@@ -1,0 +1,7 @@
+{
+  "port": "PORT",
+  "mongodb_url": "MONGODB_URL",
+  "rabbitmq_url": "RABBITMQ_URL",
+  "github_token": "GITHUB_TOKEN",
+  "stackoverflow_token": "STACKOVERFLOW_TOKEN"
+}

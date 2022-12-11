@@ -1,0 +1,81 @@
+version: '3.9'
+services:
+  rabbitmq:
+    image: rabbitmq:3.11.4-management
+    container_name: mft-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    ports:
+      - '10011:5672' # service port
+      - '10012:15672' # web management
+    volumes:
+      - 'rabbitmq-data:/var/lib/rabbitmq'
+  mongodb:
+    image: mongo:4.2.8
+    container_name: mft-mongo
+    environment:
+      MONGO_DATA_DIR: /data/db
+      MONGO_LOG_DIR: /dev/null
+      MONGO_INITDB_DATABASE: "mft"
+    ports:
+      - '10013:27017'
+    volumes:
+      - 'mongodb-data:/data/db'
+  frontend:
+    build:
+      context: './frontend'
+      dockerfile: Dockerfile
+    container_name: mft-frontend
+    working_dir: /var/www/app
+    volumes:
+      - './frontend/:/var/www/app'
+      - 'ignore:/var/www/app/node_modules'
+    environment:
+      NODE_ENV: local
+    command: sh -c "tail -f /dev/null"
+    ports:
+      - "10021:3000"
+    depends_on:
+      - api
+  api:
+    build:
+      context: './api'
+      dockerfile: Dockerfile
+    container_name: mft-api
+    working_dir: /var/www/app
+    volumes:
+      - './api/:/var/www/app'
+      - ignore:/var/www/app/node_modules
+    environment:
+      NODE_ENV: "development"
+      RABBITMQ_URL: "amqp://user:password@rabbitmq"
+      MONGODB_URL: "mongodb://mongodb:27017/mft"
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+    command: sh -c "tail -f /dev/null"
+    ports:
+      - "10022:3000"
+    depends_on:
+      - mongodb
+      - rabbitmq
+      - backend
+  backend:
+    build:
+      context: './backend'
+      dockerfile: Dockerfile
+    container_name: mft-backend
+    volumes:
+      - './backend/:/var/www/app'
+      - 'ignore:/var/www/app/node_modules'
+    environment:
+      NODE_ENV: "development"
+      RABBITMQ_URL: "amqp://user:password@rabbitmq"
+      MONGODB_URL: "mongodb://mongodb:27017/mft"
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+    command: sh -c "tail -f /dev/null"
+    ports:
+      - "10023:3000"
+volumes:
+  rabbitmq-data: null
+  mongodb-data: null
+  ignore: null
